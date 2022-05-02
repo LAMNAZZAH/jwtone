@@ -1,8 +1,17 @@
 const express = require("express");
 const res = require("express/lib/response");
 const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
+const bcrypt = require("bcrypt");
+const { hash } = require("bcrypt");
 
 const app = express();
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(express.json());
+
+const users = [];
 
 app.get("/api", (req, res) => {
   res.json({
@@ -17,7 +26,7 @@ app.post("/api/posts", verifyToken, (req, res) => {
     } else {
       res.json({
         message: "post created . . .",
-        authData, 
+        authData,
       });
     }
   });
@@ -25,17 +34,41 @@ app.post("/api/posts", verifyToken, (req, res) => {
 
 app.post("/api/login", (req, res) => {
   //mock user
-  const user = {
-    id: 1,
-    username: "moha",
-    email: "moha@gmail.com",
-  };
 
-  jwt.sign({ user }, "thesecretkey", (err, token) => {
+  //
+  jwt.sign({ user }, "thesecretkey", { expiresIn: "30s" }, (err, token) => {
     res.json({
       token,
     });
   });
+});
+
+app.get("/api/register", (req, res, next) => {
+  res.send(`
+    <h1>The Application</h1>
+    <hr/>
+    <h2>Register:</h2>
+    <form method='POST' action='/api/register'>
+    <input type='text' name='name' placeholder='name' required>
+    <br/>
+    <br/>
+    <input type='password' name='password' placeholder='password' required>
+    <br/>
+    <br/>
+    <input type='submit'>
+    </form>`);
+});
+
+app.post("/api/register", async (req, res, next) => {
+  if (req.body.name && req.body.password) {
+    const salt = await bcrypt.genSalt();
+    const hashedPass = await bcrypt.hash(req.body.password, salt);
+    const user = { name: req.body.name, password: hashedPass };
+    users.push(user);
+    res.redirect("/login");
+  } else {
+      res.status(500).send(`there is an error! retry please`); 
+  }
 });
 
 function verifyToken(req, res, next) {
