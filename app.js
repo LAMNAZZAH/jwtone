@@ -32,15 +32,65 @@ app.post("/api/posts", verifyToken, (req, res) => {
   });
 });
 
-app.post("/api/login", (req, res) => {
-  //mock user
+app.get("/api/dashboard",verifyToken, (req, res, next) => {
+    jwt.verify(req.token, "thesecretkey", (err, userAuthData) => {
+        if (err) {
+            res.sendStatus(403); 
+        } else {
+            res.send(`
+              <h1>DASHBOARD</h1>
+              <h2>sensitive information!!</h2>
+              <h3>information: ${userAuthData}</h3>
+              `);
+        }
+    })
+});
 
+app.get("/api/login", (req, res, next) => {
+  res.send(`
+    <h1>The Application</h1>
+    <hr/>
+    <h2>Login:</h2>
+    <form method='POST' action='/api/login'>
+    <input type='text' name='name' placeholder='name' required>
+    <br/>
+    <br/>
+    <input type='password' name='password' placeholder='password' required>
+    <br/>
+    <br/>
+    <input type='submit'>
+    </form>
+    `);
+});
+
+app.post("/api/login", async (req, res) => {
+  //mock user
+  const user = users.find((user) => (user.name = req.body.name));
+  if (user == null) {
+    return res.status(400).send(`invalid information for existing user!`);
+  }
+
+  try {
+    if (await bcrypt.compare(req.body.password, user.password)) {
+      jwt.sign(
+        { user },
+        "thesecretkey",
+        { expiresIn: "180s" },
+        (err, token) => {
+          res.json({
+            token,
+          });
+          console.log(token);
+        }
+      );
+      //res.redirect("/api/dashboard");
+    } else {
+      res.send(`incorrect password!!`);
+    }
+  } catch {
+    res.status(500).send("there is an error loggin in!");
+  }
   //
-  jwt.sign({ user }, "thesecretkey", { expiresIn: "30s" }, (err, token) => {
-    res.json({
-      token,
-    });
-  });
 });
 
 app.get("/api/register", (req, res, next) => {
@@ -65,9 +115,10 @@ app.post("/api/register", async (req, res, next) => {
     const hashedPass = await bcrypt.hash(req.body.password, salt);
     const user = { name: req.body.name, password: hashedPass };
     users.push(user);
-    res.redirect("/login");
+    console.log(users);
+    res.redirect("/api/login");
   } else {
-      res.status(500).send(`there is an error! retry please`); 
+    res.status(500).send(`there is an error! retry please`);
   }
 });
 
