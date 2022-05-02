@@ -32,6 +32,8 @@ app.post("/api/posts", verifyToken, (req, res) => {
   });
 });
 
+//! verifythereistoken && verifyisAdmin && verify
+
 app.get("/api/dashboard",verifyToken, (req, res, next) => {
     jwt.verify(req.token, "thesecretkey", (err, userAuthData) => {
         if (err) {
@@ -137,5 +139,28 @@ function verifyToken(req, res, next) {
     res.sendStatus(403);
   }
 }
+
+/*
+async function checkUser(name, password) {
+    //? fetch user from DB 
+    const user = users.find(user => name = user.name);
+    const match = await bcrypt.compare(password, user.password);
+
+    if(match) {
+        jwt.sign(
+            { user },
+            "thesecretkey",
+            { expiresIn: "180s" },
+            (err, token) => {
+              res.json({
+                token,
+              });
+              console.log(token);
+            }
+          );
+    }
+    return res.send(`Incorrect Information!!`);
+}
+*/
 
 app.listen(5000, console.log("started on 5000!!!!!"));
